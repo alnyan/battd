@@ -18,10 +18,6 @@ Plotting includes basic discharge prediction function.
 
 (For stat plotting function to work, matplotlib Python module is required)
 
-Known bugs:
------------
-* Rotating battery log removes previous one, so plotting features are not available right after log rotation (Can be fixed by either keeping last N entries or increasing log size).
-
 Credits
 -------
 The "Daemon" class code (in battd.py) is licensed under CC BY-SA 3.0 and was written by Sander Marechal, original article:
