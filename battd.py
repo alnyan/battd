@@ -132,7 +132,7 @@ class Daemon:
 class BattDaemon(Daemon):
     def rotate_log(self):
         sys.stdout.flush()
-        os.remove(os.path.expanduser('~/battd.log'))
+        os.remove(self.stdout)
         so = open(self.stdout, 'a+')
         os.dup2(so.fileno(), sys.stdout.fileno())
 
@@ -142,11 +142,12 @@ class BattDaemon(Daemon):
         batt_charge_full = 0
         batt_status = None
         time_now = 0
+        prev_state = None
         while True:
             log_size = os.stat(os.path.expanduser('~/battd.log')).st_size
 
-            if log_size > 65536:
-                rotate_log()
+            if log_size > 262144:   # 256K log size TODO: make it configurable
+                self.rotate_log()
 
             time_now = time.time()
 
@@ -155,9 +156,14 @@ class BattDaemon(Daemon):
             with open('/sys/class/power_supply/BAT1/charge_full') as f:
                 batt_charge_full = int(f.read())
             with open('/sys/class/power_supply/BAT1/status') as f:
-                batt_status = f.read()
+                batt_status = f.read().strip()
 
-            print("%u %u %u %s" % (time_now, batt_charge_now, batt_charge_full, batt_status), end="")
+            if batt_status == 'Discharging' and prev_state == 'Charging':
+                self.rotate_log()
+
+            prev_state = batt_status
+
+            print("%u %u %u %s" % (time_now, batt_charge_now, batt_charge_full, batt_status))
 
             time.sleep(60)
 
