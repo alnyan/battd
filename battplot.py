@@ -2,9 +2,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import os.path
+import sys
+import json
 
-with open(os.path.expanduser('~/battd.log')) as f:
+config = None
+
+if not os.path.isfile(os.path.expanduser('~/.config/battd/config.json')):
+    print("Configuration file does not exist. Have you run battd?")
+    sys.exit(1)
+else:
+    with open(os.path.expanduser('~/.config/battd/config.json'), 'r') as f:
+        config = json.loads(f.read())
+
+with open(os.path.expanduser(config["log_path"])) as f:
     batt_lines = [x.strip().split(' ') for x in f]
+
+if len(batt_lines) == 0:
+    print("No entries in battery log, exiting.")
+    sys.exit(1)
 
 times_origin = int(batt_lines[0][0])
 
@@ -17,7 +32,10 @@ charge_fulls = [int(x[2]) for x in batt_lines]
 statuses = [x[3] for x in batt_lines]
 percentages = [(int(x[1]) / int(x[2]) * 100) for x in batt_lines]
 deltaqs = [0 if i == 0 else percentages[i] - percentages[i - 1] for i in range(0, len(percentages))]
-deltaq_last = (percentages[-1] - percentages[-2])
+if len(batt_lines) > 1:
+    deltaq_last = (percentages[-1] - percentages[-2])
+else:
+    deltaq_last = 0
 
 percentages_predict = []
 times_predict = []
