@@ -3,6 +3,7 @@
 import sys, os, time, atexit
 from signal import SIGTERM
 import datetime
+import json
 
 class Daemon:
     """
@@ -144,18 +145,18 @@ class BattDaemon(Daemon):
         time_now = 0
         prev_state = None
         while True:
-            log_size = os.stat(os.path.expanduser('~/battd.log')).st_size
+            log_size = os.stat(self.stdout).st_size
 
-            if log_size > 262144:   # 256K log size TODO: make it configurable
+            if log_size > self.config["log_size"]:   # 256K log size TODO: make it configurable
                 self.rotate_log()
 
             time_now = time.time()
 
-            with open('/sys/class/power_supply/BAT1/charge_now') as f:
+            with open('/sys/class/power_supply/' + self.config["battery_name"] + '/charge_now') as f:
                 batt_charge_now = int(f.read())
-            with open('/sys/class/power_supply/BAT1/charge_full') as f:
+            with open('/sys/class/power_supply/' + self.config["battery_name"] + '/charge_full') as f:
                 batt_charge_full = int(f.read())
-            with open('/sys/class/power_supply/BAT1/status') as f:
+            with open('/sys/class/power_supply/' + self.config["battery_name"] + '/status') as f:
                 batt_status = f.read().strip()
 
             if batt_status == 'Discharging' and prev_state == 'Charging':
@@ -168,7 +169,28 @@ class BattDaemon(Daemon):
             time.sleep(60)
 
 if __name__ == '__main__':
-    daemon = BattDaemon('/tmp/battd.pid', '/dev/null', os.path.expanduser('~/battd.log'))
+    config = {
+        "log_path": "~/battd.log",
+        "log_size": 262144,
+        "battery_name": "BAT1"
+    }
+
+    if not os.path.isfile(os.path.expanduser('~/.config/battd/config.json')):
+        print("Configuration file was not found, creating new one")
+
+        try:
+            os.makedirs(os.path.expanduser('~/.config/battd'))
+        except OSError as e:
+            pass
+
+        with open(os.path.expanduser('~/.config/battd/config.json'), 'w') as f:
+            f.write(json.dumps(config))
+    else:
+        with open(os.path.expanduser('~/.config/battd/config.json'), 'r') as f:
+            config = json.loads(f.read())
+
+    daemon = BattDaemon('/tmp/battd.pid', '/dev/null', os.path.expanduser(config["log_path"]))
+    daemon.config = config
 
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
