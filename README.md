@@ -21,7 +21,6 @@ Plotting includes basic discharge prediction function.
 Known bugs:
 -----------
 * Rotating battery log removes previous one, so plotting features are not available right after log rotation (Can be fixed by either keeping last N entries or increasing log size).
-* Log rotations are not synchronized with Charging/Discharging state transitions. Logs should only be rotated when transitioning from Charging -> Discharging.
 
 Credits
 -------
