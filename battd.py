@@ -159,7 +159,7 @@ class BattDaemon(Daemon):
             with open('/sys/class/power_supply/' + self.config["battery_name"] + '/status') as f:
                 batt_status = f.read().strip()
 
-            if batt_status == 'Discharging' and prev_state == 'Charging':
+            if batt_status == 'Discharging' and prev_state == 'Charging' or batt_status == 'Discharging' and prev_state == 'Full':
                 self.rotate_log()
 
             prev_state = batt_status
